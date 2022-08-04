@@ -1,23 +1,37 @@
 ---
 - name: Check if Go is already installed.
-  command: /usr/local/go/bin/go version
+  shell: >
+    /usr/local/go/bin/go version | cut -d " " -f 3 | cut -c 3-
   ignore_errors: true
   register: go_version_result
   changed_when: false
+
+- debug: var=go_version
+
+- debug: var=go_version_result
+
+- name: Set install flag if the version numbers do not match
+  set_fact:
+    golang_install: true
+  when: (go_version_result.stderr != "") or (go_version_result.stdout != go_version)
 
 - name: Download Go.
   get_url:
     url: "{{ go_download_url }}"
     dest: /usr/local/src/{{ go_tarball }}
-    checksum: "sha256:{{ go_checksum }}"
-  when: go_version_result is failed
+  when: golang_install
+
+- name: Delete premiouse go installation
+  file:
+    state: absent
+    path: /usr/local/go
 
 - name: Extract Go.
   unarchive:
     src: /usr/local/src/{{ go_tarball }}
     dest: /usr/local
     copy: no
-  when: go_version_result is failed
+  when: golang_install
 
 - name: Add Go to to system-wide $PATH.
   copy:
