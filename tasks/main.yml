@@ -21,13 +21,18 @@
     dest: /usr/local/src/{{ go_tarball }}
   when: golang_install
 
-- name: Delete premiouse go installation
+- name: Delete previouse go installation
   file:
     state: absent
     path: /usr/local/go
   when: golang_install
 
-- debug: var=go_install_debug
+- name: Extract Go
+  unarchive:
+    src: /usr/local/src/{{ go_tarball }}
+    dest: /usr/local
+    copy: no
+  when: golang_install
 
 - name: Add Go to to system-wide $PATH.
   copy:
